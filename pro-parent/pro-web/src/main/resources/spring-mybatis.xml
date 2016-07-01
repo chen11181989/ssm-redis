@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+	http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-4.0.xsd	
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+	<!-- 自动扫描，以完成Bean创建和自动依赖注入的功能 -->
+	<context:component-scan base-package="com.pro.webapp" />
+
+	<context:property-placeholder
+		ignore-unresolvable="true" location="classpath:*.properties" />
+		<!-- 引入数据库配置文件 -->
+	<!-- <bean id="propertyConfigurer"
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="location" value="classpath:*.properties" />
+	</bean> -->
+		
+		
+	<bean name="dataSource" class="com.alibaba.druid.pool.DruidDataSource"
+		init-method="init" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+		<property name="initialSize" value="0" />
+		<property name="maxActive" value="20" />
+		<property name="minIdle" value="0" />
+		<property name="maxWait" value="60000" />
+		<property name="validationQuery" value="${jdbc.testSql}" />
+		<property name="testOnBorrow" value="false" />
+		<property name="testOnReturn" value="false" />
+		<property name="testWhileIdle" value="true" />
+		<property name="timeBetweenEvictionRunsMillis" value="60000" />
+		<property name="minEvictableIdleTimeMillis" value="25200000" />
+		<property name="removeAbandoned" value="true" />
+		<property name="removeAbandonedTimeout" value="1800" />
+		<property name="logAbandoned" value="true" />
+		<property name="filters" value="mergeStat" />
+	</bean>
+	<!-- spring和MyBatis完美整合，不需要mybatis的配置映射文件 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<!-- 自动扫描mapping.xml 文件 -->
+		<property name="mapperLocations" value="classpath:com/pro/webapp/mapping/**/*.xml" />
+		 <!-- 开启缓存支持 -->
+		 <property name="configurationProperties">
+			<props>
+				<prop key="cacheEnabled">true</prop>
+				<!-- 查询时，关闭关联对象即时加载以提高性能 -->
+				<prop key="lazyLoadingEnabled">false</prop>
+				<!-- 设置关联对象加载的形态，此处为按需加载字段(加载字段由SQL指定)，不会加载关联表的所有字段，以提高性能 -->
+				<prop key="aggressiveLazyLoading">true</prop>
+				<!-- 对于未知的SQL查询，允许返回不同的结果集以达到通用的效果 -->
+				<prop key="multipleResultSetsEnabled">true</prop>
+				<!-- 允许使用列标签代替列名 -->
+				<prop key="useColumnLabel">true</prop>
+				<!-- 允许使用自定义的主键值(比如由程序生成的UUID 32位编码作为键值)，数据表的PK生成策略将被覆盖 -->
+				<prop key="useGeneratedKeys">true</prop>
+				<!-- 给予被嵌套的resultMap以字段-属性的映射支持 -->
+				<prop key="autoMappingBehavior">FULL</prop>
+				<!-- 对于批量更新操作缓存SQL以提高性能 -->
+				<prop key="defaultExecutorType">BATCH</prop>
+				<!-- 数据库超过25000秒仍未响应则超时 -->
+				<prop key="defaultStatementTimeout">25000</prop>
+			</props>
+		</property>
+		
+		
+		
+	</bean>
+	<!-- DAO接口所在包名，Spring会自动查找其下的类 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="com.pro.webapp" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+	<!-- (事务管理)transaction manager, use JtaTransactionManager for global tx -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- <tx:advice id="transactionAdvice" transaction-manager="transactionManager"> 
+		<tx:attributes> <tx:method name="add*" propagation="REQUIRED" /> <tx:method 
+		name="append*" propagation="REQUIRED" /> <tx:method name="insert*" propagation="REQUIRED" 
+		/> <tx:method name="save*" propagation="REQUIRED" /> <tx:method name="update*" 
+		propagation="REQUIRED" /> <tx:method name="modify*" propagation="REQUIRED" 
+		/> <tx:method name="edit*" propagation="REQUIRED" /> <tx:method name="delete*" 
+		propagation="REQUIRED" /> <tx:method name="remove*" propagation="REQUIRED" 
+		/> <tx:method name="repair" propagation="REQUIRED" /> <tx:method name="delAndRepair" 
+		propagation="REQUIRED" /> <tx:method name="get*" propagation="SUPPORTS" /> 
+		<tx:method name="find*" propagation="SUPPORTS" /> <tx:method name="load*" 
+		propagation="SUPPORTS" /> <tx:method name="search*" propagation="SUPPORTS" 
+		/> <tx:method name="datagrid*" propagation="SUPPORTS" /> <tx:method name="*" 
+		propagation="SUPPORTS" /> </tx:attributes> </tx:advice> <aop:config> <aop:pointcut 
+		id="transactionPointcut" expression="execution(* com.free.webapp..*impl.*(..))" 
+		/> <aop:advisor pointcut-ref="transactionPointcut" advice-ref="transactionAdvice" 
+		/> </aop:config> -->
+</beans>
+

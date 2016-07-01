@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.pro.webapp.student.dao.StudentDao">
+
+	<cache type="com.pro.webapp.util.RedisCache" />
+	<resultMap type="com.pro.webapp.student.model.Student" id="userList">
+		<id column="stuId" property="stuId" />
+		<result column="stuName" property="stuName" />
+		<result column="age" property="age" />
+		<result column="sex" property="sex" />
+	</resultMap>
+	
+	<select id="getStu" parameterType="com.pro.webapp.student.model.Student"
+		resultMap="userList">
+		SELECT * from student
+	</select>
+</mapper>
